@@ -1,31 +1,39 @@
 package com.zucc.demo.controller;
 
+import com.alibaba.fastjson.JSON;
+import com.zucc.demo.dao.BookDAO;
 import com.zucc.demo.dao.UserDAOImpl;
+import com.zucc.demo.dao.UserDAO;
 import com.zucc.demo.model.BookVo;
 import com.zucc.demo.model.RatingVo;
 import com.zucc.demo.model.UserVo;
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-@Controller
+@RestController
 public class UserController {
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-    private UserDAOImpl userDAO = new UserDAOImpl();
+    @Autowired
+    BookDAO bookDAO;
+
+    @Autowired
+    UserDAO userDAO;
 
     @RequestMapping(value = "/individual", method = RequestMethod.GET)
     public ModelAndView indiPage() {
@@ -33,60 +41,59 @@ public class UserController {
         mav.setViewName("individual");
         return mav;
     }
-    @RequestMapping(value = "/login", method = RequestMethod.GET)
+
+    @RequestMapping(value = "/search", method = RequestMethod.GET)
     public ModelAndView loginPage() {
         ModelAndView mav = new ModelAndView();
-        mav.setViewName("index");
+        mav.setViewName("search");
         return mav;
     }
 
-    /*@RequestMapping(value = "/Info", method = RequestMethod.GET)
+    @RequestMapping(value = "/info", method = RequestMethod.GET)
     public ModelAndView infoPage() {
         ModelAndView mav = new ModelAndView();
         mav.setViewName("info");
         return mav;
-    }*/
+    }
 
-    @RequestMapping(value = "/check", method = RequestMethod.POST)
-    private void check(HttpServletRequest request,HttpServletResponse response) throws IOException{
-        String sid = request.getParameter("id");
-        String pwd =request.getParameter("pwd");
+    @RequestMapping(value = "/user", method = RequestMethod.GET)
+    private Map<String,Object> check(String id, String pwd) throws IOException{
+        logger.info("check{}---userid:"+id);
+        Map<String,Object> map = new HashMap<String,Object>();
         String msg = "{\"content\":\"正确\",\"flag\":true}";
         try{
-            if(sid.equals(""))
+            if(id.equals(""))
                 throw new Exception("用户id不能为空");
-            if(!UserDAOImpl.isNum(sid))
+            if(!UserDAOImpl.isNum(id))
                 throw new Exception("用户id只能为数字");
             if(pwd.equals(""))
                 throw new Exception("密码不能为空");
-            int id = Integer.parseInt(sid);
-            UserVo user = userDAO.login(id);
+            int uid = Integer.parseInt(id);
+            UserVo user = userDAO.login(uid);
             if(user==null)
                 throw new Exception("用户不存在");
             else
                 if(!pwd.equals(user.getPasswd()))
                     throw new Exception("用户密码错误");
-            List<BookVo> list = userDAO.recommend(id);
-            request.getSession().setAttribute("user",user);
-            request.getSession().setAttribute("list",list);
-            logger.info("check{}---userid:"+sid);
+            List<BookVo> list = userDAO.recommend(uid);
+            map.put("userid",user.getUser_id());
+            map.put("list",list);
         }
         catch(Exception ex){
             msg = "{\"content\":\""+ex.getMessage()+"\",\"flag\":false}";
         }
         finally {
-            response.setCharacterEncoding("UTF-8");
-            response.setContentType("text/html;charset=UTF-8");
-            response.getWriter().write(msg);
+            map.put("msg",msg);
+            return map;
         }
     }
 
-    @RequestMapping(value = "/add", method = RequestMethod.POST)
-    private void add(HttpServletRequest request,HttpServletResponse response) throws IOException{
-        String location = new String(request.getParameter("location").getBytes("iso-8859-1"), "utf-8");
-        String age =request.getParameter("age");
-        String pwd =request.getParameter("pwd");
+    @RequestMapping(value = "/user", method = RequestMethod.POST)
+    private Map<String,Object> add(String location,String pwd, String age) throws IOException{
+        System.out.println("enter add......");
+        String nlocation = new String(location.getBytes("iso-8859-1"), "utf-8");
         String msg = "";
+        Map<String,Object> map = new HashMap<String,Object>();
         try{
             if(location.equals(""))
                 throw new Exception("地址不能为空");
@@ -96,60 +103,60 @@ public class UserController {
                 throw new Exception("年龄只能为数字");
             if(pwd.equals(""))
                 throw new Exception("密码不能为空");
-            UserVo user = userDAO.register(pwd,location,age);
+            UserVo user = userDAO.register(pwd,nlocation,age);
             msg = "{\"content\":\""+user.getUser_id()+"\",\"flag\":true}";
             List<BookVo> list = userDAO.recommend(user.getUser_id());
-            request.getSession().setAttribute("user",user);
-            request.getSession().setAttribute("list",list);
+            map.put("userid",user.getUser_id());
+            map.put("list",list);
             logger.info("add{}---userid:"+user.getUser_id());
         }
         catch(Exception ex){
             msg = "{\"content\":\""+ex.getMessage()+"\",\"flag\":false}";
         }
         finally {
-            response.setCharacterEncoding("UTF-8");
-            response.setContentType("text/html;charset=UTF-8");
-            response.getWriter().write(msg);
+            map.put("msg",msg);
+            return map;
         }
     }
 
-    @RequestMapping(value = "/personal", method = RequestMethod.GET)
-    private String personal(HttpServletRequest request,HttpServletResponse response){
-        int id = Integer.parseInt(request.getParameter("id"));
+    @RequestMapping(value = "/getInfo", method = RequestMethod.GET)
+    private List<RatingVo> personal(Integer id){
+        List<RatingVo> list = null;
         try{
-
-            List<RatingVo> list = userDAO.already(id);
-            request.getSession().setAttribute("alist",list);
+             list = userDAO.already(id);
             logger.info("personal{}---userid:"+id);
         }
         catch(Exception ex) {
             System.out.println(ex.getMessage());
         }
-        return "info";
+        finally {
+            return list;
+        }
     }
 
-    @RequestMapping(value = "/value", method = RequestMethod.POST)
-    private void value(HttpServletRequest request,HttpServletResponse response) throws IOException{
-        int id = Integer.parseInt(request.getParameter("id"));
-        String isbn = request.getParameter("isbn");
-        int score = Integer.parseInt(request.getParameter("score"));
+    @RequestMapping(value = "/user", method = RequestMethod.PUT)
+    private Map<String,Object> value(Integer id, String isbn, Integer score) throws IOException{
+        System.out.println("enter value ... ");
         String msg = "";
+        List<RatingVo> searchList = null;
+        List<BookVo> list = null;
+        Map<String,Object> map = new HashMap<String,Object>();
         try{
             int flag = userDAO.value(id,isbn,score);
-            List<BookVo> list = userDAO.recommend(id);
-            request.getSession().setAttribute("list",list);
+            list = userDAO.recommend(id);
             if(flag==1)
                 throw new Exception("您已评过分");
             msg = "{\"content\":\"评分成功\",\"flag\":true}";
+            map.put("list",list);
+            map.put("searchList",searchList);
             logger.info("value{}---score:"+ score);
         }
         catch(Exception ex){
             msg = "{\"content\":\""+ex.getMessage()+"\",\"flag\":false}";
         }
         finally {
-            response.setCharacterEncoding("UTF-8");
-            response.setContentType("text/html;charset=UTF-8");
-            response.getWriter().write(msg);
+            map.put("msg",msg);
+            return map;
         }
     }
    /* @RequestMapping(value = "/personal", method = RequestMethod.POST)

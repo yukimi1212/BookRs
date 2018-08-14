@@ -1,6 +1,9 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
          pageEncoding="UTF-8"%>
 <%@ page import="java.util.*,com.zucc.demo.model.*"%>
+<%@ page import="net.sf.json.JSONArray"%>
+<%@ page import="com.alibaba.fastjson.JSON"%>
+<%@ page import="java.util.Map"%>
 <!DOCTYPE HTML>
 
 <html>
@@ -15,7 +18,12 @@
 	<body class="homepage">
 
 	<%
-    String id = (String) request.getParameter("id");
+    String result = (String) request.getParameter("result");
+    Map map = JSON.parseObject(result);
+    String id = map.get("userid").toString();
+    List<RatingVo> list = new ArrayList<RatingVo>();
+    JSONArray jsonArray = JSONArray.fromObject(map.get("list"));
+    list = JSONArray.toList(jsonArray,BookVo.class);
 
     %>
 
@@ -32,7 +40,7 @@
 						<!-- Nav -->
 							<nav id="nav">
 								<ul>
-                                    <li><input type="text" id="searchword"></input></li>
+                                    <li><input type="text" id="searchWord"></input></li>
 									<li><a href="javascript:void(0)" onclick="dosearch()">Search</a></li>
 								</ul>
 							</nav>
@@ -50,7 +58,7 @@
 							</div>
 							<div class="5u 12u(medium)">
 								<ul>
-									<li><a href="http://localhost:8080/BooksRs/personal?id=<%=id%>" class="button alt big icon fa-question-circle">Personal Info</a></li>
+									<li><a href="javascript:void(0)" onclick="info()" class="button alt big icon fa-question-circle">Personal Info</a></li>
 								</ul>
 							</div>
 						</div>
@@ -62,7 +70,7 @@
 					<div class="container">
 						<div class="row">
     <%
-	    List objlist=(List) request.getSession().getAttribute("list");
+	    List objlist=list;
 	    if(objlist!=null){
             for(int i=0;i<objlist.size();i++){
          	    BookVo book = (BookVo) objlist.get(i);
@@ -103,33 +111,70 @@
 
             <script type="text/javascript">
                 function dosearch(){
-                    var searchword = document.getElementById("searchword").value;
-                    var url = 'http://localhost:8080/BooksRs/search?id=<%=id%>&searchword=';
-                    window.open(url+searchword);
+                    var searchWord = document.getElementById("searchWord").value;
+                    var uurl = 'http://localhost:8080/BooksRs/search?id=<%=id%>&searchWord=';
+                    $.ajax({
+                        type:'GET',
+                        url:'http://localhost:8080/BooksRs/book',
+                        async:true,
+                        data:{
+                            'id':<%=id%>,
+                            'searchWord':searchWord
+                        },
+                        dataType:'json',
+                        success:function(result){
+                            var jsonData = JSON.stringify(result);
+                            window.open(uurl+searchWord+"&result="+jsonData);
+                        },
+                        error:function(){
+                            alert("失败...");
+                        }
+                    })
                 }
+
+				function info(){
+                        var uurl = 'http://localhost:8080/BooksRs/info?id=<%=id%>';
+                        $.ajax({
+                            type:'GET',
+                            url:'http://localhost:8080/BooksRs/getInfo',
+                            async:true,
+                            data:{
+                                'id':<%=id%>
+                            },
+                            dataType:'json',
+                            success:function(result){
+                                var jsonData = JSON.stringify(result);
+                                window.open(uurl+"&result="+jsonData);
+                            },
+                            error:function(){
+                                alert("失败...");
+                            }
+                        })
+                    }
 
                 function value(isbn){
                     var score = prompt("请输入您的评分","");
-                    var url = "http://localhost:8080/BooksRs/individual?id="
+                    var uurl = "http://localhost:8080/BooksRs/individual?id=<%=id%>"
                     if (score!=null && score!="") {
-                        var xmlhttp = new XMLHttpRequest();
-                        xmlhttp.open("POST", "value", true);
-                        xmlhttp.setRequestHeader("Content-type",
-                                    "application/x-www-form-urlencoded");
-                        xmlhttp.send("id=" + <%=id%> + "&isbn=" + isbn + "&score=" + score);
-                        xmlhttp.onreadystatechange = function() {
-                            if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-                                var response = xmlhttp.responseText;
-                                response = JSON.parse(response);
-                                if (response.flag) {
-                                    alert(response.content);
-                                    window.location.href = url + <%=id%>;
+                            $.ajax({
+                                type:'POST',
+                                url:'http://localhost:8080/BooksRs/user',
+                                async:true,
+                                data:{
+                                    _method:'PUT',
+                                    'id':<%=id%>,
+                                    'isbn':isbn,
+                                    'score':score
+                                },
+                                dataType:'json',
+                                success:function(result){
+                                    var jsonData = JSON.stringify(result);
+                                    alert("评分成功！");
+                                },
+                                error:function(){
+                                    alert("失败...");
                                 }
-                                else{
-                                    alert(response.content);
-                                }
-                            }
-                        };
+                            })
 
                     }
 

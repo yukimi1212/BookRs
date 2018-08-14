@@ -1,6 +1,8 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
          pageEncoding="UTF-8"%>
 <%@ page import="java.util.*,com.zucc.demo.model.*"%>
+<%@ page import="net.sf.json.JSONArray"%>
+
 <!DOCTYPE HTML>
 	<head>
 		<title>Information</title>
@@ -14,7 +16,11 @@
 
 	<%
         String id = (String) request.getParameter("id");
-        UserVo user = (UserVo) request.getSession().getAttribute("user");
+        String result = (String) request.getParameter("result");
+
+        List<RatingVo> list = new ArrayList<RatingVo>();
+        JSONArray jsonArray = JSONArray.fromObject(result);
+        list = JSONArray.toList(jsonArray,RatingVo.class);
     %>
 
 		<div id="page-wrapper">
@@ -26,21 +32,6 @@
 							<div id="logo">
 								<h1><a href="http://localhost:8080/BooksRs/individual?id=<%=id%>">Personal Information</a></h1>
 							</div>
-						<!--<div class="info">
-								<span>帐号：<%=user.getUser_id()%></span><br>
-								<span>密码：<%=user.getPasswd()%></span><br>
-								<span>地址：<%=user.getLocation()%></span><br>
-								<span>年龄：<%=user.getAge()%></span>
-							</div>
-                        -->
-						<!-- Nav -->
-                            <nav id="nav">
-								<ul>
-
-									<li><a href="javascript:void(0)" onclick="show()">个人信息</a></li>
-								</ul>
-							</nav>
-
 					</header>
 				</div>
 
@@ -51,17 +42,11 @@
 
 							<!-- Content -->
 
-									<!--<h2>个人信息</h2>
-									<p>帐号：<%=user.getUser_id()%></p>
-									<p>密码：<%=user.getPasswd()%></p>
-									<p>地址：<%=user.getLocation()%></p>
-									<p>年龄：<%=user.getAge()%></p>-->
-
                                     <h2>已评书籍</h2><br>
 
 
     <%
-	    List objlist=(List) request.getSession().getAttribute("alist");
+	    List objlist=list;
 	    if(objlist!=null){
             for(int i=0;i<objlist.size();i++){
          	    RatingVo r = (RatingVo) objlist.get(i);
@@ -138,11 +123,6 @@
                 }
                 alertFram.focus();
                 document.body.onselectstart = function(){return false;};
-            }
-            </script>
-            <script>
-            function show(){
-                alert("ID：【<%=user.getUser_id()%>】<br>密码：【<%=user.getPasswd()%>】<br>年龄：【<%=user.getAge()%>】<br>地址：【<%=user.getLocation()%>】");
             }
             </script>
 
