@@ -1,11 +1,12 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
          pageEncoding="UTF-8"%>
 <%@ page import="java.util.*,com.zucc.demo.model.*"%>
-<%@ page import="net.sf.json.JSONArray"%>
-<%@ page import="com.alibaba.fastjson.JSON"%>
-<%@ page import="java.util.Map"%>
 <!DOCTYPE HTML>
-
+<!--
+	Verti by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
 <html>
 	<head>
 		<title>Search</title>
@@ -19,12 +20,7 @@
 
 <%
         String id = (String) request.getParameter("id");
-        String sword = (String) request.getParameter("searchWord");
-        String result = (String) request.getParameter("result");
-        Map map = JSON.parseObject(result);
-        List<RatingVo> list = new ArrayList<RatingVo>();
-        JSONArray jsonArray = JSONArray.fromObject(map.get("searchList"));
-        list = JSONArray.toList(jsonArray,RatingVo.class);
+        String word = (String) request.getParameter("searchword");
 %>
 		<div id="page-wrapper">
 
@@ -40,7 +36,7 @@
 						<!-- Nav -->
                             <nav id="nav">
 								<ul>
-                                    <li><input type="text" id="searchWord"></input></li>
+                                    <li><input type="text" id="searchword"></input></li>
 									<li><a href="javascript:void(0)" onclick="dosearch()">Search</a></li>
 								</ul>
 							</nav>
@@ -55,13 +51,10 @@
 
 							<!-- Content -->
 <%
-
-        List objlist = list;
+	    List objlist=(List) request.getSession().getAttribute("slist");
 	    if(objlist!=null){
             for(int i=0;i<objlist.size();i++){
          	    RatingVo r = (RatingVo) objlist.get(i);
-         	    String score = new String((r.getScore()).getBytes("iso-8859-1"), "utf-8");
-
     %>
 							<hr>
 							<li class="item" style="list-style-type:none;height:200px">
@@ -71,9 +64,9 @@
 							    <div class="10u 12u(medium)" style="float:left;height:200px">
 							        <h3><%=r.getTitle()%></h3>
 							        <span><%=r.getAuthor()%>  /  <%=r.getPublisher()%>  /  <%=r.getYear()%></span><br>
-							        <span>ISBN:<%=r.getIsbn()%>  /  Rating:<%=score%></span>
+							        <span>ISBN:<%=r.getIsbn()%>  /  Rating:<%=r.getScore()%></span>
 							<%
-                                if((score).equals("暂无评分")){
+                                if((r.getScore()).equals("暂无评分")){
 							%>
 							        <span><a href="javascript:void(0)" title="<%=r.getIsbn()%>" onclick="value(title)">评分</a></span>
                             <%
@@ -104,51 +97,35 @@
 
             <script type="text/javascript">
                             function dosearch(){
-                                var searchWord = document.getElementById("searchWord").value;
-                                var uurl = 'http://localhost:8080/BooksRs/search?id=<%=id%>&searchWord=';
-                                $.ajax({
-                                    type:'GET',
-                                    url:'http://localhost:8080/BooksRs/book',
-                                    async:true,
-                                    data:{
-                                        'id':<%=id%>,
-                                        'searchWord':searchWord
-                                    },
-                                    dataType:'json',
-                                    success:function(result){
-                                        var jsonData = JSON.stringify(result);
-                                        window.open(uurl+searchWord+"&result="+jsonData);
-                                    },
-                                    error:function(){
-                                        alert("失败...");
-                                    }
-                                })
+                                var searchword = document.getElementById("searchword").value;
+                                var url = 'http://localhost:8080/BooksRs/search?id=<%=id%>&searchword=';
+                                window.location.href = url+searchword;
                             }
 
                             function value(isbn){
                                 var score = prompt("请输入您的评分","");
-                                var uurl = "http://localhost:8080/BooksRs/search?id=<%=id%>&searchWord=";
+                                var url = "http://localhost:8080/BooksRs/search?id=<%=id%>&searchword=<%=word%>"
                                 if (score!=null && score!="") {
-                                    $.ajax({
-                                            type:'POST',
-                                            url:'http://localhost:8080/BooksRs/user',
-                                            async:true,
-                                            data:{
-                                                _method:'PUT',
-                                                'id':<%=id%>,
-                                                'isbn':isbn,
-                                                'score':score
-                                            },
-                                            dataType:'json',
-                                            success:function(result){
-                                                var jsonData = JSON.stringify(result);
-                                                alert("评分成功！");
-                                            },
-                                            error:function(){
-                                                alert("失败...");
+                                    var xmlhttp = new XMLHttpRequest();
+                                    xmlhttp.open("POST", "value", true);
+                                    xmlhttp.setRequestHeader("Content-type",
+                                                "application/x-www-form-urlencoded");
+                                    xmlhttp.send("id=" + <%=id%> + "&isbn=" + isbn + "&score=" + score);
+                                    xmlhttp.onreadystatechange = function() {
+                                        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                                            var response = xmlhttp.responseText;
+                                            response = JSON.parse(response);
+                                            if (response.flag) {
+                                                window.location.href = url;
                                             }
-                                    })
+                                            else{
+                                                alert(response.content);
+                                            }
+                                        }
+                                    };
+
                                 }
+
                             }
             </script>
 	</body>
