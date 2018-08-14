@@ -1,7 +1,5 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"
          pageEncoding="UTF-8"%>
-<%@ page import="javax.servlet.http.HttpSession"%>
-
 <!DOCTYPE html>
 <html >
 <head>
@@ -10,7 +8,6 @@
 
   <link rel='stylesheet prefetch' href='http://fonts.googleapis.com/css?family=Open+Sans'>
   <link rel="stylesheet" href="css/style.css">
-  <script src="http://cdn.static.runoob.com/libs/jquery/2.1.1/jquery.min.js"></script>
 
 </head>
 
@@ -62,7 +59,7 @@
         <span>Password</span>
         <input type="password" id="pwd"/>
       </label>
-      <button type="button" class="submit" onclick="add()" >Sign Up</button>
+      <button type="button" class="submit" onclick="add()">Sign Up</button>
     </div>
   </div>
 </div>
@@ -80,51 +77,49 @@
         function check(){
             var id = document.getElementById("userid").value;
             var pwd = document.getElementById("userpwd").value;
-            var uurl = "http://localhost:8080/BooksRs/individual?id="
-            $.ajax({
-                    type:'GET',
-                    url:'http://localhost:8080/BooksRs/user',
-                    async:true,
-                    data:{
-                        'id':id,
-                        'pwd':pwd
-                    },
-                    dataType:'json',
-                    success:function(result){
-                        var jsonData = JSON.stringify(result);
-                        window.open(uurl + "&result="+jsonData);
-                    },
-                    error:function(){
-                        alert("登录失败...");
-                    }
-                })
+            var url = "http://localhost:8080/BooksRs/individual?id="
+            var xmlhttp = new XMLHttpRequest();
+                    xmlhttp.open("POST", "check", true);
+                    xmlhttp.setRequestHeader("Content-type",
+                            "application/x-www-form-urlencoded");
+                    xmlhttp.send("id=" + id + "&pwd=" + pwd);
+                    xmlhttp.onreadystatechange = function() {
+                        if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                            var response = xmlhttp.responseText;
+                            response = JSON.parse(response);
+                            if (response.flag) {
+                            	window.open(url+id);
+                            }
+                            else{
+                            	alert(response.content);
+                            }
+                        }
+                    };
         }
 
-    function add(){
-                var location = document.getElementById("location").value;
-                var age = document.getElementById("age").value;
-                var pwd = document.getElementById("pwd").value;
-                var uurl = "http://localhost:8080/BooksRs/individual?id="
-                $.ajax({
-                    type:'POST',
-                    url:'http://localhost:8080/BooksRs/user',
-                    async:true,
-                    data:{
-                        'pwd':pwd,
-                        'location':location,
-                        'age':age
-                    },
-                    dataType:'json',
-                    success:function(result){
-                        var jsonData = JSON.stringify(result);
-                        window.open(uurl + "&result="+jsonData);
-                    },
-                    error:function(){
-                        alert("add失败...");
-                    }
-                })
-            }
-
+        function add(){
+                    var location = document.getElementById("location").value;
+                    var age = document.getElementById("age").value;
+                    var pwd = document.getElementById("pwd").value;
+                    var url = "http://localhost:8080/BooksRs/individual?id="
+                    var xmlhttp = new XMLHttpRequest();
+                            xmlhttp.open("POST", "add", true);
+                            xmlhttp.setRequestHeader("Content-type",
+                                    "application/x-www-form-urlencoded");
+                            xmlhttp.send("pwd=" + pwd + "&location=" + location + "&age=" + age );
+                            xmlhttp.onreadystatechange = function() {
+                                if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+                                    var response = xmlhttp.responseText;
+                                    response = JSON.parse(response);
+                                    if (response.flag) {
+                                    	window.open(url+response.content);
+                                    }
+                                    else{
+                                    	alert(response.content);
+                                    }
+                                }
+                            };
+                }
     </script>
 </body>
 </html>
