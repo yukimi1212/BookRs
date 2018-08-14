@@ -17,8 +17,8 @@ import org.apache.mahout.cf.taste.similarity.*;
 import java.io.File;
 import java.util.List;
 public class Mahout {
-    private static String TRAINPATH = "X:\\study\\大三\\短学期\\train.csv";
-    private static String PATH = "X:\\study\\大三\\短学期\\data\\";
+    private static String TRAINPATH = "C:\\Users\\lenovo\\Desktop\\课程\\暑期实践\\train.csv";
+    private static String PATH = "C:\\Users\\lenovo\\Desktop\\课程\\暑期实践\\data\\";
 
     public static void main(String args[]) throws Exception {
 
